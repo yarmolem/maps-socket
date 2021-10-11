@@ -11,8 +11,13 @@ const initialCoords = {
 }
 
 const MapPage = () => {
-  const map = useMapbox({ initialCoords })
   const { socket } = useContext(SocketContext)
+
+  const map = useMapbox({
+    initialCoords,
+    onCreateMarker: (m) => socket.emit(ADD_MARKER, { marker: m }),
+    onMoveMarker: (m) => socket.emit(UPDATE_MARKER, { marker: m })
+  })
 
   useEffect(() => {
     socket.on(ACTIVE_MARKERS, ({ markers }) => {
@@ -31,18 +36,6 @@ const MapPage = () => {
   useEffect(() => {
     socket.on(UPDATE_MARKER, ({ marker }) => {
       map.updatePosition(marker)
-    })
-  }, [])
-
-  useEffect(() => {
-    map.newMarker$.subscribe((marker) => {
-      socket.emit(ADD_MARKER, { marker })
-    })
-  }, [])
-
-  useEffect(() => {
-    map.moveMarker$.subscribe((marker) => {
-      socket.emit(UPDATE_MARKER, { marker })
     })
   }, [])
 

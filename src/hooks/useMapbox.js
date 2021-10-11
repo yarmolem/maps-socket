@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Subject } from 'rxjs'
+
 import mapboxgl from 'mapbox-gl'
 import { v4 as uuidv4 } from 'uuid'
 
 const MAP_KEY = import.meta.env.VITE_MAP_KEY
 mapboxgl.accessToken = MAP_KEY
 
-const useMapbox = ({ initialCoords }) => {
+const useMapbox = ({
+  initialCoords,
+  onMoveMarker = () => {},
+  onCreateMarker = () => {}
+}) => {
   const mapRef = useRef()
   const markers = useRef({})
   const mapContainerRef = useRef()
-
-  // Suscripciones
-  const newMarker = useRef(new Subject())
-  const moveMarker = useRef(new Subject())
 
   const [coords, setCoords] = useState(initialCoords)
 
@@ -27,12 +27,9 @@ const useMapbox = ({ initialCoords }) => {
 
     marker.id = id ?? uuidv4()
     marker.setLngLat([lng, lat]).addTo(mapRef.current)
-
     markers.current[marker.id] = marker
 
-    if (!id) {
-      newMarker.current.next({ id: marker.id, lat, lng })
-    }
+    if (!id) onCreateMarker({ id: marker.id, lat, lng })
 
     /**
      * Marker events
@@ -42,7 +39,7 @@ const useMapbox = ({ initialCoords }) => {
       const { id } = target
       const { lng, lat } = target.getLngLat()
 
-      moveMarker.current.next({ id, lng, lat })
+      onMoveMarker({ id, lng, lat })
     })
   }, [])
 
@@ -85,9 +82,7 @@ const useMapbox = ({ initialCoords }) => {
     coords,
     addMarker,
     updatePosition,
-    setMapContainerRef,
-    newMarker$: newMarker.current,
-    moveMarker$: moveMarker.current
+    setMapContainerRef
   }
 }
 
